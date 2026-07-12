@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pizzaria Bom Paladar</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#111111',
+                        cardBg: '#1a1a1a',
+                        cardHover: '#222222',
+                        brandRed: '#e50914'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-[#111111] text-gray-100 font-sans antialiased selection:bg-red-600 selection:text-white">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+
+        const pizzas = [
+            { id: 1, name: 'Frango com Catupiry', ingredients: 'Molho, frango, catupiry, tomate, orégano, cebola e ervilha verde.', price: 35.00 },
+            { id: 2, name: 'Calabresa', ingredients: 'Molho, mussarela, calabresa, cebola e orégano.', price: 35.00 },
+            { id: 3, name: 'Frango com Bacon', ingredients: 'Molho, frango, bacon, tomate, cebola, ervilha, milho verde e orégano.', price: 35.00 },
+            { id: 4, name: 'Calabresa com Bacon', ingredients: 'Molho, mussarela, calabresa, bacon, cebola e orégano.', price: 35.00 },
+            { id: 5, name: 'Bacon', ingredients: 'Molho, mussarela, bacon, tomate, cebola e orégano.', price: 35.00 },
+            { id: 6, name: 'Baiana', ingredients: 'Molho, mussarela, calabresa, pimenta calabresa, ovo, tomate, cebola e orégano.', price: 35.00 },
+            { id: 7, name: '4 Queijos', ingredients: 'Molho, parmesão, mussarela, catupiry, cheddar, tomate e orégano.', price: 35.00 },
+            { id: 8, name: 'Portuguesa', ingredients: 'Molho, mussarela, ovo, presunto, ervilha, milho verde, tomate, cebola e orégano.', price: 35.00 },
+            { id: 9, name: 'Mista', ingredients: 'Molho, mussarela, presunto, ervilha, milho verde, tomate, cebola e orégano.', price: 35.00 },
+            { id: 10, name: 'Mussarela', ingredients: 'Molho, mussarela, tomate, ervilha, milho verde e orégano.', price: 35.00 },
+            { id: 11, name: 'Sabor da Casa', ingredients: 'Molho, frango, mussarela, catupiry, cebola e orégano.', price: 35.00 },
+            { id: 12, name: 'Carne Seca', ingredients: 'Molho, carne seca (charque), mussarela, cebola, ervilha, milho verde e catupiry.', price: 38.00 },
+        ];
+
+        const bebidas = [
+            { id: 13, name: 'Guaraná Antarctica 1L', price: 7.00 },
+            { id: 14, name: 'Guaraná Antarctica 2L', price: 10.00 },
+            { id: 15, name: 'Pepsi 1L', price: 7.00 },
+            { id: 16, name: 'Pepsi 2L', price: 10.00 },
+        ];
+
+        function App() {
+            const whatsappNumber = "5582994033796"; 
+            const instagramLink = "https://www.instagram.com/pizzaria.bom.paladar.j.m?igsh=N2lubGphbngybG9h";
+
+            const handleOrder = (itemName, itemPrice) => {
+                const message = `Olá, Bom Paladar! Gostaria de pedir: *${itemName}* (R$ ${itemPrice.toFixed(2).replace('.', ',')}). Podemos continuar com o pedido?`;
+                const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+                window.open(url, '_blank');
+            };
+
+            return (
+                <div className="min-h-screen flex flex-col justify-between">
+                    
+                    {/* NAVBAR */}
+                    <header className="flex items-center justify-between p-6 max-w-7xl w-full mx-auto">
+                        <div className="flex items-center gap-2">
+                            <div className="bg-red-600 text-white p-2 rounded-full">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+                            </div>
+                            <h1 className="text-2xl font-black tracking-tight text-white uppercase">Bom Paladar</h1>
+                        </div>
+                        <nav className="hidden md:flex gap-8 text-sm font-medium text-gray-400">
+                            <a href="#cardapio" className="hover:text-red-500 transition-colors">Cardápio</a>
+                            <a href="#bebidas" className="hover:text-red-500 transition-colors">Bebidas</a>
+                            <a href="#contato" className="hover:text-red-500 transition-colors">Contato</a>
+                        </nav>
+                        <div>
+                            <a href={instagramLink} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-red-500 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 11-5.656 5.656 4 4 0 015.656-5.656zm-1.414-1.414a6 6 0 108.486 8.486L12.414 8.758z" /></svg>
+                            </a>
+                        </div>
+                    </header>
+
+                    {/* HERO SECTION */}
+                    <section className="relative w-full max-w-7xl mx-auto px-6 py-12 md:py-20 flex flex-col md:flex-row items-center justify-between gap-8">
+                        <div className="md:w-1/2 z-10 text-center md:text-left">
+                            <h2 className="text-4xl md:text-6xl font-black text-white leading-tight mb-6">
+                                Pizza deliciosa <br />
+                                <span className="text-red-600">e não só isso!</span>
+                            </h2>
+                            <p className="text-gray-400 text-base md:text-lg mb-8 max-w-md mx-auto md:mx-0">
+                                Peça a sua entrega rápida em Matriz de Camaragibe. Ingredientes frescos e o sabor irresistível que você já conhece.
+                            </p>
+                            <a href="#cardapio" className="inline-block bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-10 rounded-full transition-transform transform hover:scale-105 shadow-lg shadow-red-600/30">
+                                Ir para o Menu
+                            </a>
+                        </div>
+                        <div className="md:w-1/2 relative flex justify-center">
+                            <div className="absolute inset-0 bg-red-600 blur-[120px] opacity-20 rounded-full"></div>
+                            <img 
+                                src="https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?q=80&w=600&auto=format&fit=crop" 
+                                alt="Pizza" 
+                                className="relative z-10 w-full max-w-sm md:max-w-md rounded-full object-cover aspect-square drop-shadow-[0_20px_50px_rgba(230,10,10,0.3)] animate-[spin_100s_linear_infinite]"
+                            />
+                        </div>
+                    </section>
+
+                    {/* CATEGORIAS & SELEÇÃO */}
+                    <div className="max-w-7xl w-full mx-auto px-6 py-8" id="cardapio">
+                        <div className="flex flex-wrap gap-3 mb-10 border-b border-gray-800 pb-6 overflow-x-auto whitespace-nowrap">
+                            <button className="bg-red-600 text-white px-6 py-2.5 rounded-full font-bold text-sm tracking-wide shadow-md shadow-red-600/20">
+                                Pizzas (R$ 35,00)
+                            </button>
+                            <a href="#bebidas" className="bg-[#1e1e1e] hover:bg-[#2a2a2a] text-gray-300 px-6 py-2.5 rounded-full font-semibold text-sm transition-colors">
+                                Bebidas
+                            </a>
+                        </div>
+
+                        {/* GRID DO CARDÁPIO DE PIZZAS */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                            {pizzas.map((pizza) => (
+                                <div key={pizza.id} className="bg-[#161616] border border-gray-900 rounded-[2rem] p-6 flex flex-col items-center text-center hover:border-red-600/30 hover:bg-[#1c1c1c] transition-all duration-300 group">
+                                    <div className="overflow-hidden rounded-full mb-5 w-36 h-36 border-4 border-gray-900 group-hover:border-red-600/20 transition-all duration-300">
+                                        <img 
+                                            src="https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=250&auto=format&fit=crop" 
+                                            alt={pizza.name} 
+                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                        />
+                                    </div>
+                                    <h3 className="text-xl font-extrabold text-white mb-2 tracking-tight">{pizza.name}</h3>
+                                    <p className="text-gray-400 text-xs line-clamp-3 mb-6 flex-grow leading-relaxed">
+                                        {pizza.ingredients}
+                                    </p>
+                                    <div className="w-full flex items-center justify-center mb-4">
+                                        <span className="text-white font-black text-xl">
+                                            R$ {pizza.price.toFixed(2).replace('.', ',')}
+                                        </span>
+                                    </div>
+                                    <button 
+                                        onClick={() => handleOrder(pizza.name, pizza.price)}
+                                        className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 rounded-xl transition-colors text-sm tracking-wider uppercase"
+                                    >
+                                        Comprar
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* SEÇÃO DE BEBIDAS */}
+                    <div className="max-w-7xl w-full mx-auto px-6 py-12" id="bebidas">
+                        <h2 className="text-2xl font-black text-white mb-6 border-l-4 border-red-600 leagues pl-3 uppercase tracking-wider">Bebidas</h2>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                            {bebidas.map((bebida) => (
+                                <div key={bebida.id} className="bg-[#161616] border border-gray-900 rounded-2xl p-5 flex items-center justify-between hover:border-gray-800 transition-colors">
+                                    <div>
+                                        <h3 className="text-white font-bold text-sm mb-1">{bebida.name}</h3>
+                                        <span className="text-red-500 font-extrabold text-sm">R$ {bebida.price.toFixed(2).replace('.', ',')}</span>
+                                    </div>
+                                    <button 
+                                        onClick={() => handleOrder(bebida.name, bebida.price)}
+                                        className="bg-[#222] hover:bg-red-600 text-white p-3 rounded-xl transition-colors"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* FOOTER */}
+                    <footer className="bg-[#0a0a0a] border-t border-gray-900 mt-20 pt-12 pb-6" id="contato">
+                        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 text-sm">
+                            <div className="space-y-3">
+                                <h3 className="text-xl font-black text-white uppercase">Bom Paladar</h3>
+                                <p className="text-gray-500 max-w-xs leading-relaxed">
+                                    A união perfeita entre a tradição de uma boa massa e a facilidade do pedido online direto para a sua mesa.
+                                </p>
+                            </div>
+                            <div className="space-y-3">
+                                <h4 className="text-white font-bold uppercase tracking-wider text-xs text-gray-400">Informações</h4>
+                                <p className="text-gray-400 flex items-center gap-2">
+                                    <span className="text-red-600">📍</span> Matriz de Camaragibe - AL
+                                </p>
+                                <p className="text-gray-400 flex items-center gap-2">
+                                    <span className="text-red-600">🛵</span> Atendimento Rápido 24/7
+                                </p>
+                            </div>
+                            <div className="space-y-3">
+                                <h4 className="text-white font-bold uppercase tracking-wider text-xs text-gray-400">Contatos rápidos</h4>
+                                <a href={`https://wa.me/${whatsappNumber}`} target="_blank" className="block text-gray-400 hover:text-green-400 transition-colors">
+                                    📞 (82) 99403-3796
+                                </a>
+                                <a href={instagramLink} target="_blank" className="block text-gray-400 hover:text-pink-400 transition-colors">
+                                    📸 @pizzaria.bom.paladar.j.m
+                                </a>
+                            </div>
+                        </div>
+                        <div className="max-w-7xl mx-auto px-6 mt-12 pt-6 border-t border-gray-900 text-center text-xs text-gray-600">
+                            &copy; {new Date().getFullYear()} Pizzaria Bom Paladar. Todos os direitos reservados.
+                        </div>
+                    </footer>
+
+                </div>
+            );
+        }
+
+        // Renderiza o componente principal na div root
+        const root = ReactRoot = injustices = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
