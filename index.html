@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pizzaria Bom Paladar</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0a0a0a',
+                        cardBg: '#121212',
+                        cardHover: '#181818',
+                        brandRed: '#e50914'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Suaviza a rolagem da página */
+        html { scroll-behavior: smooth; }
+        /* Barra de rolagem estilizada adaptável */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+        .dark ::-webkit-scrollbar-thumb { background: #333; }
+        ::-webkit-scrollbar-thumb:hover { background: #e50914; }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-[#0a0a0a] text-gray-900 dark:text-gray-100 font-sans antialiased selection:bg-red-600 selection:text-white overflow-x-hidden transition-colors duration-300">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const pizzas = [
+            { id: 1, name: 'Frango com Catupiry', ingredients: 'Molho, frango, catupiry, tomate, orégano, cebola e ervilha verde.', price: 35.00 },
+            { id: 2, name: 'Calabresa', ingredients: 'Molho, mussarela, calabresa, cebola e orégano.', price: 35.00 },
+            { id: 3, name: 'Frango com Bacon', ingredients: 'Molho, frango, bacon, tomate, cebola, ervilha, milho verde e orégano.', price: 35.00 },
+            { id: 4, name: 'Calabresa com Bacon', ingredients: 'Molho, mussarela, calabresa, bacon, cebola e orégano.', price: 35.00 },
+            { id: 5, name: 'Bacon', ingredients: 'Molho, mussarela, bacon, tomate, cebola e orégano.', price: 35.00 },
+            { id: 6, name: 'Baiana', ingredients: 'Molho, mussarela, calabresa, pimenta calabresa, ovo, tomate, cebola e orégano.', price: 35.00 },
+            { id: 7, name: '4 Queijos', ingredients: 'Molho, parmesão, mussarela, catupiry, cheddar, tomate e orégano.', price: 35.00 },
+            { id: 8, name: 'Portuguesa', ingredients: 'Molho, mussarela, ovo, presunto, ervilha, milho verde, tomate, cebola e orégano.', price: 35.00 },
+            { id: 9, name: 'Mista', ingredients: 'Molho, mussarela, presunto, ervilha, milho verde, tomate, cebola e orégano.', price: 35.00 },
+            { id: 10, name: 'Mussarela', ingredients: 'Molho, mussarela, tomate, ervilha, milho verde e orégano.', price: 35.00 },
+            { id: 11, name: 'Sabor da Casa', ingredients: 'Molho, frango, mussarela, catupiry, cebola e orégano.', price: 35.00 },
+            { id: 12, name: 'Carne Seca', ingredients: 'Molho, carne seca (charque), mussarela, cebola, ervilha, milho verde e catupiry.', price: 38.00 },
+        ];
+
+        const bebidas = [
+            { id: 13, name: 'Guaraná Antarctica 1L', price: 7.00 },
+            { id: 14, name: 'Guaraná Antarctica 2L', price: 10.00 },
+            { id: 15, name: 'Pepsi 1L', price: 7.00 },
+            { id: 16, name: 'Pepsi 2L', price: 10.00 },
+        ];
+
+        function App() {
+            const [isDarkMode, setIsDarkMode] = useState(true);
+            const [showScrollTop, setShowScrollTop] = useState(false);
+            
+            const whatsappNumber = "5582994033796"; 
+            const instagramLink = "https://www.instagram.com/pizzaria.bom.paladar.j.m?igsh=N2lubGphbngybG9h";
+
+            // Efeito para aplicar o Tema Claro/Escuro
+            useEffect(() => {
+                if (isDarkMode) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            }, [isDarkMode]);
+
+            // Efeito para monitorar o Scroll
+            useEffect(() => {
+                const handleScroll = () => {
+                    if (window.scrollY > window.innerHeight / 2) {
+                        setShowScrollTop(true);
+                    } else {
+                        setShowScrollTop(false);
+                    }
+                };
+                window.addEventListener('scroll', handleScroll);
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
+
+            const handleOrder = (itemName, itemPrice) => {
+                const message = `Olá, Bom Paladar! Gostaria de pedir: *${itemName}* (R$ ${itemPrice.toFixed(2).replace('.', ',')}). Podemos continuar com o pedido?`;
+                const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+                window.open(url, '_blank');
+            };
+
+            const scrollToMenu = () => {
+                const cardapio = document.getElementById('cardapio');
+                if(cardapio) {
+                    cardapio.scrollIntoView({ behavior: 'smooth' });
+                }
+            };
+
+            return (
+                <div className="min-h-[100dvh] flex flex-col justify-between overflow-x-hidden relative">
+                    
+                    {/* NAVBAR */}
+                    <header className="flex items-center justify-between p-6 max-w-7xl w-full mx-auto backdrop-blur-md sticky top-0 z-50 bg-white/80 dark:bg-[#0a0a0a]/80 border-b border-gray-200 dark:border-gray-900/50 transition-colors duration-300">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-gradient-to-br from-red-500 to-red-700 text-white p-2.5 rounded-xl shadow-lg shadow-red-600/20">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+                            </div>
+                            <h1 className="text-xl md:text-2xl font-black tracking-tight text-gray-900 dark:text-white uppercase">Bom Paladar</h1>
+                        </div>
+                        <nav className="hidden md:flex gap-8 text-sm font-semibold text-gray-600 dark:text-gray-400">
+                            <a href="#cardapio" className="hover:text-red-600 dark:hover:text-white transition-colors">Cardápio</a>
+                            <a href="#bebidas" className="hover:text-red-600 dark:hover:text-white transition-colors">Bebidas</a>
+                            <a href="#contato" className="hover:text-red-600 dark:hover:text-white transition-colors">Contato</a>
+                        </nav>
+                        <div className="flex items-center gap-3">
+                            {/* Botão Tema Claro/Escuro */}
+                            <button 
+                                onClick={() => setIsDarkMode(!isDarkMode)} 
+                                className="flex items-center justify-center p-2.5 bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white rounded-full transition-all duration-300 shadow-sm"
+                                aria-label="Alternar Tema"
+                            >
+                                {isDarkMode ? (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                                ) : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+                                )}
+                            </button>
+                            
+                            {/* Logo oficial do Instagram */}
+                            <a href={instagramLink} target="_blank" rel="noreferrer" 
+                               className="flex items-center justify-center p-2.5 bg-gray-100 dark:bg-gray-900 hover:bg-gradient-to-tr hover:from-yellow-500 hover:via-red-500 hover:to-purple-600 text-gray-600 dark:text-gray-300 hover:text-white dark:hover:text-white rounded-full transition-all duration-300 shadow-sm">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                                </svg>
+                            </a>
+                        </div>
+                    </header>
+
+                    {/* HERO SECTION */}
+                    <section className="relative w-full max-w-7xl mx-auto px-6 py-16 md:py-24 flex flex-col md:flex-row items-center justify-between gap-12">
+                        <div className="md:w-1/2 z-10 text-center md:text-left">
+                            <div className="inline-block bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-600/30 text-red-600 dark:text-red-500 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-6">
+                                Artesanal & Fresquinha
+                            </div>
+                            <h2 className="text-5xl md:text-7xl font-black text-gray-900 dark:text-white leading-[1.1] mb-6 transition-colors">
+                                Pizza deliciosa <br />
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-red-700">e não só isso!</span>
+                            </h2>
+                            <p className="text-gray-600 dark:text-gray-400 text-lg mb-8 max-w-md mx-auto md:mx-0 leading-relaxed transition-colors">
+                                Peça a sua entrega rápida em Matriz de Camaragibe. Ingredientes selecionados e o sabor irresistível que você já conhece.
+                            </p>
+                            <a href="#cardapio" className="inline-flex items-center gap-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-bold text-lg py-4 px-10 rounded-full transition-all active:scale-95 shadow-lg shadow-red-700/40">
+                                Fazer Pedido
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                            </a>
+                        </div>
+                        <div className="md:w-1/2 relative flex justify-center mt-10 md:mt-0 w-full max-w-md mx-auto">
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-red-600/20 blur-[100px] rounded-full pointer-events-none"></div>
+                            <img 
+                                src="https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?q=80&w=600&auto=format&fit=crop" 
+                                alt="Pizza" 
+                                className="relative z-10 w-full rounded-full object-cover aspect-square border-8 border-white dark:border-[#121212] drop-shadow-[0_20px_50px_rgba(229,9,20,0.3)] animate-[spin_120s_linear_infinite] transition-colors"
+                            />
+                        </div>
+                    </section>
+
+                    {/* CATEGORIAS & SELEÇÃO */}
+                    <div className="max-w-7xl w-full mx-auto px-6 py-12 relative" id="cardapio">
+                        <div className="flex flex-wrap gap-4 mb-12 border-b border-gray-200 dark:border-gray-800 pb-6 transition-colors">
+                            <button className="bg-red-600 text-white px-8 py-3 rounded-full font-bold text-sm tracking-wider shadow-lg shadow-red-600/30">
+                                Pizzas (R$ 35,00)
+                            </button>
+                            <a href="#bebidas" className="bg-white dark:bg-[#121212] border border-gray-300 dark:border-gray-800 hover:border-gray-400 dark:hover:border-gray-600 text-gray-700 dark:text-gray-300 px-8 py-3 rounded-full font-bold text-sm transition-all shadow-sm">
+                                Bebidas
+                            </a>
+                        </div>
+
+                        {/* GRID DO CARDÁPIO DE PIZZAS */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                            {pizzas.map((pizza) => (
+                                <div key={pizza.id} className="bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-800/60 rounded-3xl p-6 flex flex-col items-center text-center hover:border-red-600/50 dark:hover:border-red-600/50 hover:-translate-y-1 transition-all duration-300 shadow-xl shadow-black/5 dark:shadow-black/50 group">
+                                    <div className="overflow-hidden rounded-full mb-6 w-40 h-40 border-4 border-gray-50 dark:border-[#1a1a1a] group-hover:border-red-600/30 transition-all duration-300 shadow-inner">
+                                        <img 
+                                            src="https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=250&auto=format&fit=crop" 
+                                            alt={pizza.name} 
+                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                        />
+                                    </div>
+                                    <h3 className="text-xl font-black text-gray-900 dark:text-white mb-3 tracking-tight transition-colors">{pizza.name}</h3>
+                                    <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-3 mb-6 flex-grow leading-relaxed transition-colors">
+                                        {pizza.ingredients}
+                                    </p>
+                                    <div className="w-full flex items-center justify-center mb-5">
+                                        <span className="text-gray-900 dark:text-white font-black text-2xl transition-colors">
+                                            <span className="text-sm text-red-500 mr-1">R$</span>
+                                            {pizza.price.toFixed(2).replace('.', ',')}
+                                        </span>
+                                    </div>
+                                    <button 
+                                        onClick={() => handleOrder(pizza.name, pizza.price)}
+                                        className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold py-4 rounded-2xl transition-all duration-300 active:scale-95 text-sm tracking-widest uppercase shadow-md"
+                                    >
+                                        Comprar
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* SEÇÃO DE BEBIDAS */}
+                    <div className="max-w-7xl w-full mx-auto px-6 py-12" id="bebidas">
+                        <div className="flex items-center gap-3 mb-8">
+                            <div className="w-2 h-8 bg-red-600 rounded-full"></div>
+                            <h2 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-wider transition-colors">Bebidas</h2>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                            {bebidas.map((bebida) => (
+                                <div key={bebida.id} className="bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-800 rounded-2xl p-5 flex items-center justify-between hover:border-red-500/50 hover:bg-red-50/50 dark:hover:bg-[#161616] transition-all group shadow-sm dark:shadow-none">
+                                    <div>
+                                        <h3 className="text-gray-800 dark:text-gray-200 font-bold text-sm mb-1 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">{bebida.name}</h3>
+                                        <span className="text-red-600 dark:text-red-500 font-black text-lg">R$ {bebida.price.toFixed(2).replace('.', ',')}</span>
+                                    </div>
+                                    <button 
+                                        onClick={() => handleOrder(bebida.name, bebida.price)}
+                                        className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-white group-hover:bg-red-600 group-hover:text-white p-3.5 rounded-xl transition-all duration-300 active:scale-90"
+                                        aria-label="Adicionar Bebida"
+                                    >
+                                        {/* Logo/Ícone de Carrinho Restaurado */}
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* FOOTER */}
+                    <footer className="bg-gray-100 dark:bg-[#050505] border-t border-gray-200 dark:border-gray-900 mt-20 pt-16 pb-8 transition-colors" id="contato">
+                        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-12 text-sm">
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <div className="bg-red-600 text-white p-1.5 rounded-lg">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+                                    </div>
+                                    <h3 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight transition-colors">Bom Paladar</h3>
+                                </div>
+                                <p className="text-gray-600 dark:text-gray-500 max-w-xs leading-relaxed text-base transition-colors">
+                                    A união perfeita entre a tradição de uma boa massa e a facilidade do pedido online direto para a sua mesa.
+                                </p>
+                            </div>
+                            <div className="space-y-4">
+                                <h4 className="text-gray-900 dark:text-white font-black uppercase tracking-widest text-xs transition-colors">Informações</h4>
+                                <ul className="space-y-3">
+                                    <li className="text-gray-600 dark:text-gray-400 flex items-center gap-3 text-base transition-colors">
+                                        <span className="text-red-600 text-xl">📍</span> Matriz de Camaragibe - AL
+                                    </li>
+                                    <li className="text-gray-600 dark:text-gray-400 flex items-center gap-3 text-base transition-colors">
+                                        <span className="text-red-600 text-xl">🛵</span> Atendimento Rápido 24/7
+                                    </li>
+                                </ul>
+                            </div>
+                            <div className="space-y-4">
+                                <h4 className="text-gray-900 dark:text-white font-black uppercase tracking-widest text-xs transition-colors">Contatos rápidos</h4>
+                                <ul className="space-y-4 mt-2">
+                                    <li>
+                                        <a href={`https://wa.me/${whatsappNumber}`} target="_blank" className="flex items-center gap-3 text-gray-600 dark:text-gray-400 hover:text-green-500 dark:hover:text-green-400 transition-colors text-base font-medium">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                                            (82) 99403-3796
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href={instagramLink} target="_blank" className="flex items-center gap-3 text-gray-600 dark:text-gray-400 hover:text-pink-600 dark:hover:text-pink-500 transition-colors text-base font-medium">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                                            @pizzaria.bom.paladar.j.m
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div className="max-w-7xl mx-auto px-6 mt-16 pt-8 border-t border-gray-200 dark:border-gray-900 flex flex-col md:flex-row items-center justify-between gap-4 transition-colors">
+                            <p className="text-xs text-gray-500 font-medium">
+                                &copy; {new Date().getFullYear()} Pizzaria Bom Paladar. Todos os direitos reservados.
+                            </p>
+                        </div>
+                    </footer>
+
+                    {/* BOTÃO FLUTUANTE PARA SUBIR AO CARDÁPIO */}
+                    <button
+                        onClick={scrollToMenu}
+                        className={`fixed bottom-6 right-6 z-50 p-3.5 rounded-full shadow-2xl bg-red-600 text-white hover:bg-red-700 active:scale-95 transition-all duration-300 flex items-center justify-center ${showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}
+                        aria-label="Ir para as Pizzas"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 15l7-7 7 7" />
+                        </svg>
+                    </button>
+
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
