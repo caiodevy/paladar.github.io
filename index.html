@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pizzaria Bom Paladar</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0a0a0a',
+                        cardBg: '#121212',
+                        cardHover: '#181818',
+                        brandRed: '#e50914'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Suaviza a rolagem da página */
+        html { scroll-behavior: smooth; }
+        /* Barra de rolagem estilizada adaptável */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+        .dark ::-webkit-scrollbar-thumb { background: #333; }
+        ::-webkit-scrollbar-thumb:hover { background: #e50914; }
+
+        /* Animação de clique para todos os botões do site.
+           Usa apenas :active (CSS puro) — não depende de estado do React
+           nem causa re-render, então tem custo de performance zero. */
+        button {
+            -webkit-tap-highlight-color: transparent;
+            transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.15s ease;
+        }
+        button:active {
+            transform: scale(0.92);
+            filter: brightness(0.95);
+        }
+
+        /* Placeholder cinza enquanto a imagem da pizza carrega (evita "pulo" de layout) */
+        .img-placeholder {
+            background-color: #e5e7eb;
+        }
+        .dark .img-placeholder { background-color: #1a1a1a; }
+
+        /* Balanço leve do botão flutuante do carrinho logo após adicionar um item.
+           Dispara só uma vez (0.5s) e some sozinho — não fica balançando à toa. */
+        @keyframes cartWiggle {
+            0%, 100% { transform: rotate(0deg); }
+            20% { transform: rotate(-8deg); }
+            40% { transform: rotate(8deg); }
+            60% { transform: rotate(-6deg); }
+            80% { transform: rotate(4deg); }
+        }
+        .cart-wiggle {
+            animation: cartWiggle 0.5s ease-in-out;
+        }
+
+        /* Balanço leve e CONTÍNUO dos botões de contato do footer (WhatsApp/Instagram).
+           Mesma ideia do cartWiggle, só que mais suave e sem parar. */
+        @keyframes contactSway {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-3deg); }
+            75% { transform: rotate(3deg); }
+        }
+
+        /* Cor do texto/ícone "piscando" entre o tom neutro e a cor da marca —
+           uma cor para modo claro, outra para modo escuro (mais clara, pra contrastar). */
+        @keyframes pulseWhatsappLight { 0%, 100% { color: #4b5563; } 50% { color: #16a34a; } }
+        @keyframes pulseWhatsappDark  { 0%, 100% { color: #9ca3af; } 50% { color: #4ade80; } }
+        @keyframes pulseInstagramLight { 0%, 100% { color: #4b5563; } 50% { color: #db2777; } }
+        @keyframes pulseInstagramDark  { 0%, 100% { color: #9ca3af; } 50% { color: #f472b6; } }
+
+        .footer-contact-link {
+            display: inline-flex;
+        }
+        .footer-whatsapp-link { animation: contactSway 2.6s ease-in-out infinite, pulseWhatsappLight 2.4s ease-in-out infinite; }
+        .dark .footer-whatsapp-link { animation: contactSway 2.6s ease-in-out infinite, pulseWhatsappDark 2.4s ease-in-out infinite; }
+        .footer-instagram-link { animation: contactSway 2.6s ease-in-out infinite 0.3s, pulseInstagramLight 2.4s ease-in-out infinite; }
+        .dark .footer-instagram-link { animation: contactSway 2.6s ease-in-out infinite 0.3s, pulseInstagramDark 2.4s ease-in-out infinite; }
+        /* Balanço + piscar de cor rodam sempre, mesmo em hover/clique/seleção — não pausam nunca. */
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-[#0a0a0a] text-gray-900 dark:text-gray-100 font-sans antialiased selection:bg-red-600 selection:text-white overflow-x-hidden transition-colors duration-300">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useCallback, useMemo, memo } = React;
+
+        const formatPrice = (value) => value.toFixed(2).replace('.', ',');
+
+        // Card de pizza memoizado: só re-renderiza se pizza, isJustAdded ou onAdd
+        // mudarem de verdade — evita recalcular as 12 pizzas a cada clique,
+        // toggle de tema, scroll ou abertura do carrinho.
+        const PizzaCard = memo(function PizzaCard({ pizza, isJustAdded, onAdd }) {
+            return (
+                <div className="bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-800/60 rounded-3xl p-6 flex flex-col items-center text-center hover:border-red-600/50 dark:hover:border-red-600/50 hover:-translate-y-1 transition-all duration-300 shadow-xl shadow-black/5 dark:shadow-black/50 group">
+                    <div className="img-placeholder overflow-hidden rounded-full mb-6 w-40 h-40 border-4 border-gray-50 dark:border-[#1a1a1a] group-hover:border-red-600/30 transition-all duration-300 shadow-inner">
+                        <img
+                            src={pizza.image}
+                            alt={pizza.name}
+                            loading="lazy"
+                            decoding="async"
+                            width="160"
+                            height="160"
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        />
+                    </div>
+                    <h3 className="text-xl font-black text-gray-900 dark:text-white mb-3 tracking-tight transition-colors">{pizza.name}</h3>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-3 mb-6 flex-grow leading-relaxed transition-colors">
+                        {pizza.ingredients}
+                    </p>
+                    <div className="w-full flex items-center justify-center mb-5">
+                        <span className="text-gray-900 dark:text-white font-black text-2xl transition-colors">
+                            <span className="text-sm text-red-500 mr-1">R$</span>
+                            {formatPrice(pizza.price)}
+                        </span>
+                    </div>
+                    <button
+                        onClick={() => onAdd(pizza)}
+                        className={`w-full font-bold py-4 rounded-2xl duration-300 text-sm tracking-widest uppercase shadow-md flex items-center justify-center gap-2 ${isJustAdded ? 'bg-green-600 text-white' : 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white'}`}
+                    >
+                        {isJustAdded ? (
+                            <>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                                Adicionado
+                            </>
+                        ) : (
+                            'Adicionar ao Carrinho'
+                        )}
+                    </button>
+                </div>
+            );
+        });
+
+        // Card de bebida, memoizado pelo mesmo motivo.
+        const BebidaCard = memo(function BebidaCard({ bebida, isJustAdded, onAdd }) {
+            return (
+                <div className="bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-800 rounded-2xl p-5 flex items-center justify-between hover:border-red-500/50 hover:bg-red-50/50 dark:hover:bg-[#161616] transition-all group shadow-sm dark:shadow-none">
+                    <div className="flex items-center gap-4 min-w-0">
+                        <div className="img-placeholder overflow-hidden rounded-xl w-14 h-14 flex-shrink-0 border border-gray-200 dark:border-gray-800">
+                            <img
+                                src={bebida.image}
+                                alt={bebida.name}
+                                loading="lazy"
+                                decoding="async"
+                                width="56"
+                                height="56"
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
+                        <div className="min-w-0">
+                            <h3 className="text-gray-800 dark:text-gray-200 font-bold text-sm mb-1 group-hover:text-gray-900 dark:group-hover:text-white transition-colors truncate">{bebida.name}</h3>
+                            <span className="text-red-600 dark:text-red-500 font-black text-lg">R$ {formatPrice(bebida.price)}</span>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => onAdd(bebida)}
+                        className={`flex items-center gap-2 px-4 py-3 rounded-xl duration-300 font-bold text-sm ${isJustAdded ? 'bg-green-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-white group-hover:bg-red-600 group-hover:text-white'}`}
+                        aria-label="Adicionar Bebida ao Carrinho"
+                    >
+                        {isJustAdded ? (
+                            <>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                                Adicionado
+                            </>
+                        ) : (
+                            <>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                                Adicionar
+                            </>
+                        )}
+                    </button>
+                </div>
+            );
+        });
+
+        // ATENÇÃO: estas listas são a ÚNICA fonte confiável de preços do sistema.
+        // Object.freeze impede que o objeto (e cada item dentro dele) seja
+        // sobrescrito em tempo de execução (ex: alguém tentando rodar
+        // `pizzas[0].price = 1` no console do navegador). Isso NÃO impede
+        // um usuário avançado de manipular o app de outras formas (ver
+        // explicação de segurança completa na resposta), mas fecha o
+        // vetor de ataque mais óbvio e barato.
+        //
+        // Imagens: fotos reais do Unsplash (fonte livre, sem marca d'água).
+        // Combinações muito específicas da culinária brasileira (catupiry,
+        // baiana, carne seca) não existem prontas em bancos de imagem
+        // internacionais — usei a foto mais fiel disponível para cada uma,
+        // priorizando variedade visual em vez de repetir a mesma imagem em
+        // todos os cards como estava antes.
+        const pizzas = Object.freeze([
+            { id: 1, name: 'Frango com Catupiry', ingredients: 'Molho, frango, catupiry, tomate, orégano, cebola e ervilha verde.', price: 35.00, image: 'https://images.unsplash.com/photo-1773620497483-aafa93392160?q=80&w=400&auto=format&fit=crop' },
+            { id: 2, name: 'Calabresa', ingredients: 'Molho, mussarela, calabresa, cebola e orégano.', price: 35.00, image: 'https://images.unsplash.com/photo-1618213837799-25d5552820d3?q=80&w=400&auto=format&fit=crop' },
+            { id: 3, name: 'Frango com Bacon', ingredients: 'Molho, frango, bacon, tomate, cebola, ervilha, milho verde e orégano.', price: 35.00, image: 'https://images.unsplash.com/photo-1767065603441-61923212f80c?q=80&w=400&auto=format&fit=crop' },
+            { id: 4, name: 'Calabresa com Bacon', ingredients: 'Molho, mussarela, calabresa, bacon, cebola e orégano.', price: 35.00, image: 'https://images.unsplash.com/photo-1767065603116-8cee3bf11372?q=80&w=400&auto=format&fit=crop' },
+            { id: 5, name: 'Bacon', ingredients: 'Molho, mussarela, bacon, tomate, cebola e orégano.', price: 35.00, image: 'https://images.unsplash.com/photo-1592977731761-2d58aafef572?q=80&w=400&auto=format&fit=crop' },
+            { id: 6, name: 'Baiana', ingredients: 'Molho, mussarela, calabresa, pimenta calabresa, ovo, tomate, cebola e orégano.', price: 35.00, image: 'https://images.unsplash.com/photo-1767065603803-a41d2e25a34c?q=80&w=400&auto=format&fit=crop' },
+            { id: 7, name: '4 Queijos', ingredients: 'Molho, parmesão, mussarela, catupiry, cheddar, tomate e orégano.', price: 35.00, image: 'https://images.unsplash.com/photo-1670148815909-e79a18e16ddd?q=80&w=400&auto=format&fit=crop' },
+            { id: 8, name: 'Portuguesa', ingredients: 'Molho, mussarela, ovo, presunto, ervilha, milho verde, tomate, cebola e orégano.', price: 35.00, image: 'https://images.unsplash.com/photo-1705538150113-25b08da3ae07?q=80&w=400&auto=format&fit=crop' },
+            { id: 9, name: 'Mista', ingredients: 'Molho, mussarela, presunto, ervilha, milho verde, tomate, cebola e orégano.', price: 35.00, image: 'https://images.unsplash.com/photo-1604917869287-3ae73c77e227?q=80&w=400&auto=format&fit=crop' },
+            { id: 10, name: 'Mussarela', ingredients: 'Molho, mussarela, tomate, ervilha, milho verde e orégano.', price: 35.00, image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=400&auto=format&fit=crop' },
+            { id: 11, name: 'Sabor da Casa', ingredients: 'Molho, frango, mussarela, catupiry, cebola e orégano.', price: 35.00, image: 'https://images.unsplash.com/photo-1671106681075-5a7233268cbd?q=80&w=400&auto=format&fit=crop' },
+            { id: 12, name: 'Carne Seca', ingredients: 'Molho, carne seca (charque), mussarela, cebola, ervilha, milho verde e catupiry.', price: 38.00, image: 'https://images.unsplash.com/photo-1767065603341-1c477b3e6625?q=80&w=400&auto=format&fit=crop' },
+        ].map(Object.freeze));
+
+        const bebidas = Object.freeze([
+            { id: 13, name: 'Guaraná 1L', price: 7.00, image: 'https://cdn.pixabay.com/photo/2021/04/23/06/35/soda-6200841_640.jpg' },
+            { id: 14, name: 'Guaraná 2L', price: 10.00, image: 'https://cdn.pixabay.com/photo/2021/04/23/06/35/soda-6200841_640.jpg' },
+            { id: 15, name: 'Pepsi 1L', price: 7.00, image: 'https://cdn.pixabay.com/photo/2020/05/10/05/14/pepsi-5152332_640.jpg' },
+            { id: 16, name: 'Pepsi 2L', price: 10.00, image: 'https://cdn.pixabay.com/photo/2020/05/10/05/14/pepsi-5152332_640.jpg' },
+        ].map(Object.freeze));
+
+        // Catálogo único: mapa id -> item oficial. É SEMPRE nele que o preço
+        // final é consultado, nunca a partir do que está guardado no carrinho.
+        const CATALOG = Object.freeze(
+            [...pizzas, ...bebidas].reduce((map, item) => {
+                map[item.id] = item;
+                return map;
+            }, {})
+        );
+
+        const MAX_QTY_PER_ITEM = 20; // limite defensivo contra valores absurdos/digitação incorreta
+
+        // Sons de interação, carregados via URL direta (Mixkit — biblioteca gratuita,
+        // sem necessidade de instalar nada nem pagar licença). Criados uma única vez
+        // fora do componente para não gerar um novo objeto Audio a cada clique.
+        const SOUND_ADD_TO_CART = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
+        const SOUND_ORDER_SENT = new Audio('https://assets.mixkit.co/active_storage/sfx/2570/2570-preview.mp3');
+        [SOUND_ADD_TO_CART, SOUND_ORDER_SENT].forEach((audio) => {
+            audio.preload = 'auto';
+            audio.volume = 0.45;
+        });
+
+        // Toca um som de forma defensiva: navegadores podem bloquear áudio (política
+        // de autoplay) ou a URL pode falhar em algum momento — nesses casos o som
+        // simplesmente não toca, mas o pedido continua funcionando normalmente.
+        const playSound = (audio) => {
+            try {
+                audio.currentTime = 0;
+                audio.play().catch(() => {});
+            } catch (e) {
+                // silenciosamente ignorado — som é só um extra, nunca pode travar o app
+            }
+        };
+
+        // Música de fundo — o mp3 mora no próprio repositório, dentro da pasta
+        // "audios" (mesmo lugar do GitHub Pages), então o caminho relativo abaixo
+        // funciona direto, sem precisar de link externo.
+        const BACKGROUND_MUSIC_URL = 'audios/Pizzaria_Bom_Paladar.mp3';
+        const BACKGROUND_MUSIC_VOLUME = 0.3; // 30% — mude só esse número pra ajustar o volume padrão
+        const backgroundMusic = new Audio(BACKGROUND_MUSIC_URL);
+        backgroundMusic.loop = true;
+        backgroundMusic.volume = BACKGROUND_MUSIC_VOLUME;
+        backgroundMusic.preload = 'auto';
+
+        function App() {
+            const [isDarkMode, setIsDarkMode] = useState(false);
+            const [showScrollTop, setShowScrollTop] = useState(false);
+            const [cart, setCart] = useState([]);
+            const [isCartOpen, setIsCartOpen] = useState(false);
+            const [justAdded, setJustAdded] = useState(null);
+            const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+            
+            const whatsappNumber = "5582994033796"; 
+            const instagramLink = "https://www.instagram.com/pizzaria.bom.paladar.j.m?igsh=N2lubGphbngybG9h";
+
+            // Música de fundo: navegadores bloqueiam autoplay COM SOM antes de
+            // qualquer interação do usuário, então a estratégia é: tenta tocar
+            // assim que a página carrega e, se for bloqueado, toca automaticamente
+            // no primeiro toque/clique/tecla em qualquer lugar da página.
+            useEffect(() => {
+                const trySyncState = () => setIsMusicPlaying(!backgroundMusic.paused);
+
+                backgroundMusic.play().then(trySyncState).catch(() => {});
+
+                const startOnFirstInteraction = () => {
+                    if (backgroundMusic.paused) {
+                        backgroundMusic.play().then(trySyncState).catch(() => {});
+                    }
+                };
+                const events = ['click', 'touchstart', 'keydown'];
+                events.forEach((ev) => document.addEventListener(ev, startOnFirstInteraction, { once: true }));
+
+                backgroundMusic.addEventListener('play', trySyncState);
+                backgroundMusic.addEventListener('pause', trySyncState);
+
+                return () => {
+                    events.forEach((ev) => document.removeEventListener(ev, startOnFirstInteraction));
+                    backgroundMusic.removeEventListener('play', trySyncState);
+                    backgroundMusic.removeEventListener('pause', trySyncState);
+                };
+            }, []);
+
+            const toggleMusic = useCallback(() => {
+                if (backgroundMusic.paused) {
+                    backgroundMusic.play().catch(() => {});
+                } else {
+                    backgroundMusic.pause();
+                }
+            }, []);
+
+            // Efeito para aplicar o Tema Claro/Escuro
+            useEffect(() => {
+                if (isDarkMode) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            }, [isDarkMode]);
+
+            // Efeito para monitorar o Scroll
+            useEffect(() => {
+                const handleScroll = () => {
+                    if (window.scrollY > window.innerHeight / 2) {
+                        setShowScrollTop(true);
+                    } else {
+                        setShowScrollTop(false);
+                    }
+                };
+                window.addEventListener('scroll', handleScroll);
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
+
+            // O carrinho guarda APENAS { id, quantity }. O preço e o nome NUNCA
+            // são armazenados no estado do carrinho — são sempre buscados no
+            // CATALOG (fonte única da verdade) no momento de exibir ou finalizar.
+            // Isso significa que mesmo que alguém consiga manipular o estado do
+            // React (ex: via extensão React DevTools), o preço usado na mensagem
+            // final continua vindo do catálogo oficial, nunca do que foi injetado.
+            const handleAddToCart = useCallback((item) => {
+                // Confirma que o item existe de fato no catálogo oficial antes de aceitar
+                if (!CATALOG[item.id]) return;
+
+                setCart((prevCart) => {
+                    const existing = prevCart.find((c) => c.id === item.id);
+                    if (existing) {
+                        const newQty = Math.min(existing.quantity + 1, MAX_QTY_PER_ITEM);
+                        return prevCart.map((c) =>
+                            c.id === item.id ? { ...c, quantity: newQty } : c
+                        );
+                    }
+                    return [...prevCart, { id: item.id, quantity: 1 }];
+                });
+                setJustAdded(item.id);
+                playSound(SOUND_ADD_TO_CART);
+                setTimeout(() => setJustAdded(null), 1000);
+            }, []);
+
+            const handleUpdateQuantity = useCallback((id, delta) => {
+                setCart((prevCart) =>
+                    prevCart
+                        .map((c) => {
+                            if (c.id !== id) return c;
+                            const newQty = Math.floor(c.quantity + delta);
+                            // Trava: nunca permite quantidade negativa, fracionada ou acima do limite
+                            return { ...c, quantity: Math.max(0, Math.min(newQty, MAX_QTY_PER_ITEM)) };
+                        })
+                        .filter((c) => c.quantity > 0 && CATALOG[c.id]) // remove itens inválidos/fora do catálogo
+                );
+            }, []);
+
+            const handleRemoveFromCart = useCallback((id) => {
+                setCart((prevCart) => prevCart.filter((c) => c.id !== id));
+            }, []);
+
+            // Esvaziar o carrinho é uma ação separada e explícita (o usuário precisa
+            // tocar no ícone da lixeira de propósito), então aqui é direto — sem
+            // confirmação — diferente do "Fazer Pedido", que nunca apaga nada sozinho.
+            const handleClearCart = useCallback(() => {
+                setCart([]);
+            }, []);
+
+            // Junta cada entrada do carrinho com os dados REAIS do catálogo.
+            // Se por algum motivo um id do carrinho não existir mais no catálogo,
+            // ele é ignorado — nunca "inventamos" nome ou preço.
+            // useMemo: só recalcula quando `cart` muda de verdade (não a cada
+            // render do App, como ao alternar tema ou abrir/fechar o carrinho).
+            const cartDetailed = useMemo(() => (
+                cart
+                    .filter((c) => CATALOG[c.id])
+                    .map((c) => ({
+                        ...CATALOG[c.id], // nome e preço SEMPRE do catálogo oficial
+                        quantity: Math.min(Math.max(0, Math.floor(c.quantity)), MAX_QTY_PER_ITEM),
+                    }))
+                    .filter((c) => c.quantity > 0)
+            ), [cart]);
+
+            const cartTotalItems = useMemo(() => cartDetailed.reduce((sum, c) => sum + c.quantity, 0), [cartDetailed]);
+            const cartTotalPrice = useMemo(() => cartDetailed.reduce((sum, c) => sum + c.quantity * c.price, 0), [cartDetailed]);
+
+            // Monta a mensagem final do WhatsApp. Recalcula tudo de novo, a partir
+            // do cartDetailed (que por sua vez já vem 100% do catálogo oficial),
+            // nunca de um total "guardado" em algum lugar do estado.
+            const handleFinalizeOrder = useCallback(() => {
+                if (cartDetailed.length === 0) return;
+
+                const itemsText = cartDetailed
+                    .map((c) => {
+                        const subtotal = formatPrice(c.price * c.quantity);
+                        return `*${c.name}*\n\`${c.quantity}x R$: ${subtotal}\``;
+                    })
+                    .join('\n\n');
+
+                const finalTotal = formatPrice(cartTotalPrice);
+
+                const message =
+                    `Olá, Bom Paladar! Gostaria de fazer o seguinte pedido:\n\n` +
+                    `${itemsText}\n\n` +
+                    `➖➖➖➖➖➖➖➖➖➖\n` +
+                    `*Total: R$ ${finalTotal}*\n\n` +
+                    `Podemos continuar com o pedido?`;
+
+                playSound(SOUND_ORDER_SENT);
+                const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+                window.open(url, '_blank');
+                setIsCartOpen(false);
+                // O carrinho NÃO é apagado aqui de propósito: um clique duplo/acidental
+                // em "Fazer Pedido" não pode fazer o cliente perder a lista e ter que
+                // montar tudo de novo. Quem esvazia o carrinho agora é só a lixeira.
+            }, [cartDetailed, cartTotalPrice, whatsappNumber]);
+
+            const scrollToTop = useCallback(() => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }, []);
+
+            return (
+                <div className="min-h-[100dvh] flex flex-col justify-between overflow-x-hidden relative">
+                    
+                    {/* NAVBAR */}
+                    <header className="flex items-center justify-between p-6 max-w-7xl w-full mx-auto backdrop-blur-md sticky top-0 z-50 bg-white/80 dark:bg-[#0a0a0a]/80 border-b border-gray-200 dark:border-gray-900/50 transition-colors duration-300">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-gradient-to-br from-red-500 to-red-700 text-white p-2.5 rounded-xl shadow-lg shadow-red-600/20">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+                            </div>
+                            <h1 className="text-xl md:text-2xl font-black tracking-tight text-gray-900 dark:text-white uppercase">Bom Paladar</h1>
+                        </div>
+                        <nav className="hidden md:flex gap-8 text-sm font-semibold text-gray-600 dark:text-gray-400">
+                            <a href="#cardapio" className="hover:text-red-600 dark:hover:text-white transition-colors">Cardápio</a>
+                            <a href="#bebidas" className="hover:text-red-600 dark:hover:text-white transition-colors">Bebidas</a>
+                            <a href="#contato" className="hover:text-red-600 dark:hover:text-white transition-colors">Contato</a>
+                        </nav>
+                        <div className="flex items-center gap-3">
+                            {/* Botão Música de Fundo */}
+                            <button
+                                onClick={toggleMusic}
+                                className="flex items-center justify-center p-2.5 bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white rounded-full transition-all duration-300 shadow-sm"
+                                aria-label={isMusicPlaying ? 'Pausar Música' : 'Tocar Música'}
+                                title={isMusicPlaying ? 'Pausar Música' : 'Tocar Música'}
+                            >
+                                {isMusicPlaying ? (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14" /></svg>
+                                ) : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M23 9l-6 6m0-6l6 6" /></svg>
+                                )}
+                            </button>
+
+                            {/* Botão Tema Claro/Escuro */}
+                            <button 
+                                onClick={() => setIsDarkMode(!isDarkMode)} 
+                                className="flex items-center justify-center p-2.5 bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white rounded-full transition-all duration-300 shadow-sm"
+                                aria-label="Alternar Tema"
+                            >
+                                {isDarkMode ? (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                                ) : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+                                )}
+                            </button>
+                            
+                            {/* Atalho para Contato: rola suavemente até o footer, onde já
+                                ficam os links reais de WhatsApp e Instagram — evita duplicar
+                                o Instagram em dois lugares diferentes do cabeçalho. */}
+                            <a href="#contato"
+                               className="flex items-center justify-center p-2.5 bg-gray-100 dark:bg-gray-900 hover:bg-red-600 text-gray-600 dark:text-gray-300 hover:text-white dark:hover:text-white rounded-full transition-all duration-300 shadow-sm"
+                               aria-label="Ir para Contato"
+                               title="Contato">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                                </svg>
+                            </a>
+
+                            {/* Botão do Carrinho — agora com texto visível, não só ícone */}
+                            <button
+                                onClick={() => setIsCartOpen(true)}
+                                className="relative flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 rounded-full transition-all duration-300 shadow-sm font-bold text-sm"
+                                aria-label="Abrir Carrinho"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                                <span className="hidden sm:inline">Carrinho</span>
+                                {cartTotalItems > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-white dark:border-[#0a0a0a]">
+                                        {cartTotalItems}
+                                    </span>
+                                )}
+                            </button>
+                        </div>
+                    </header>
+
+                    {/* HERO SECTION */}
+                    <section className="relative w-full max-w-7xl mx-auto px-6 py-16 md:py-24 flex flex-col md:flex-row items-center justify-between gap-12">
+                        <div className="md:w-1/2 z-10 text-center md:text-left">
+                            <div className="inline-block bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-600/30 text-red-600 dark:text-red-500 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-6">
+                                Artesanal & Fresquinha
+                            </div>
+                            <h2 className="text-5xl md:text-7xl font-black text-gray-900 dark:text-white leading-[1.1] mb-6 transition-colors">
+                                Pizza deliciosa <br />
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-red-700">e não só isso!</span>
+                            </h2>
+                            <p className="text-gray-600 dark:text-gray-400 text-lg mb-8 max-w-md mx-auto md:mx-0 leading-relaxed transition-colors">
+                                Peça a sua entrega rápida em Matriz de Camaragibe. Ingredientes selecionados e o sabor irresistível que você já conhece.
+                            </p>
+                            <a href="#cardapio" className="inline-flex items-center gap-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-bold text-lg py-4 px-10 rounded-full transition-all active:scale-95 shadow-lg shadow-red-700/40">
+                                Fazer Pedido
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                            </a>
+                        </div>
+                        <div className="md:w-1/2 relative flex justify-center mt-10 md:mt-0 w-full max-w-md mx-auto">
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-red-600/20 blur-[100px] rounded-full pointer-events-none"></div>
+                            <img 
+                                src="https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?q=80&w=600&auto=format&fit=crop" 
+                                alt="Pizza" 
+                                className="relative z-10 w-full rounded-full object-cover aspect-square border-8 border-white dark:border-[#121212] drop-shadow-[0_20px_50px_rgba(229,9,20,0.3)] animate-[spin_120s_linear_infinite] transition-colors"
+                            />
+                        </div>
+                    </section>
+
+                    {/* COMO PEDIR — guia simples de 3 passos para quem não tem costume com sites */}
+                    <div className="max-w-7xl w-full mx-auto px-6">
+                        <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/40 rounded-3xl p-6 md:p-8">
+                            <h2 className="text-lg md:text-xl font-black text-gray-900 dark:text-white uppercase tracking-wider mb-5 text-center md:text-left">
+                                Como Fazer seu Pedido
+                            </h2>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                <div className="flex items-center gap-4">
+                                    <span className="flex-shrink-0 w-11 h-11 rounded-full bg-red-600 text-white font-black text-lg flex items-center justify-center">1</span>
+                                    <p className="text-gray-700 dark:text-gray-300 font-semibold leading-snug">Escolha a pizza ou bebida e toque em <span className="text-red-600 dark:text-red-500">Adicionar</span></p>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    <span className="flex-shrink-0 w-11 h-11 rounded-full bg-red-600 text-white font-black text-lg flex items-center justify-center">2</span>
+                                    <p className="text-gray-700 dark:text-gray-300 font-semibold leading-snug">Toque no botão <span className="text-red-600 dark:text-red-500">Carrinho</span> para conferir seu pedido</p>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    <span className="flex-shrink-0 w-11 h-11 rounded-full bg-red-600 text-white font-black text-lg flex items-center justify-center">3</span>
+                                    <p className="text-gray-700 dark:text-gray-300 font-semibold leading-snug">Toque em <span className="text-green-600 dark:text-green-500">Fazer o Pedido</span> e envie pelo WhatsApp</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* CATEGORIAS & SELEÇÃO */}
+                    <div className="max-w-7xl w-full mx-auto px-6 py-12 relative" id="cardapio">
+                        <div className="flex flex-wrap gap-4 mb-12 border-b border-gray-200 dark:border-gray-800 pb-6 transition-colors">
+                            <button className="bg-red-600 text-white px-8 py-3 rounded-full font-bold text-sm tracking-wider shadow-lg shadow-red-600/30">
+                                Pizzas (R$ 35,00)
+                            </button>
+                            <a href="#bebidas" className="bg-white dark:bg-[#121212] border border-gray-300 dark:border-gray-800 hover:border-gray-400 dark:hover:border-gray-600 text-gray-700 dark:text-gray-300 px-8 py-3 rounded-full font-bold text-sm transition-all shadow-sm">
+                                Bebidas
+                            </a>
+                        </div>
+
+                        {/* GRID DO CARDÁPIO DE PIZZAS */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                            {pizzas.map((pizza) => (
+                                <PizzaCard
+                                    key={pizza.id}
+                                    pizza={pizza}
+                                    isJustAdded={justAdded === pizza.id}
+                                    onAdd={handleAddToCart}
+                                />
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* SEÇÃO DE BEBIDAS */}
+                    <div className="max-w-7xl w-full mx-auto px-6 py-12" id="bebidas">
+                        <div className="flex items-center gap-3 mb-8">
+                            <div className="w-2 h-8 bg-red-600 rounded-full"></div>
+                            <h2 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-wider transition-colors">Bebidas</h2>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                            {bebidas.map((bebida) => (
+                                <BebidaCard
+                                    key={bebida.id}
+                                    bebida={bebida}
+                                    isJustAdded={justAdded === bebida.id}
+                                    onAdd={handleAddToCart}
+                                />
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* FOOTER */}
+                    <footer className="bg-gray-100 dark:bg-[#050505] border-t border-gray-200 dark:border-gray-900 mt-20 pt-16 pb-8 transition-colors" id="contato">
+                        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-12 text-sm">
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <div className="bg-red-600 text-white p-1.5 rounded-lg">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+                                    </div>
+                                    <h3 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight transition-colors">Bom Paladar</h3>
+                                </div>
+                                <p className="text-gray-600 dark:text-gray-500 max-w-xs leading-relaxed text-base transition-colors">
+                                    A união perfeita entre a tradição de uma boa massa e a facilidade do pedido online direto para a sua mesa.
+                                </p>
+                            </div>
+                            <div className="space-y-4">
+                                <h4 className="text-gray-900 dark:text-white font-black uppercase tracking-widest text-xs transition-colors">Informações</h4>
+                                <ul className="space-y-3">
+                                    <li className="text-gray-600 dark:text-gray-400 flex items-center gap-3 text-base transition-colors">
+                                        <span className="text-red-600 text-xl">📍</span> Matriz de Camaragibe - AL
+                                    </li>
+                                    <li className="text-gray-600 dark:text-gray-400 flex items-center gap-3 text-base transition-colors">
+                                        <span className="text-red-600 text-xl">🛵</span> Atendimento Rápido 24/7
+                                    </li>
+                                </ul>
+                            </div>
+                            <div className="space-y-4">
+                                <h4 className="text-gray-900 dark:text-white font-black uppercase tracking-widest text-xs transition-colors">Contatos rápidos</h4>
+                                <ul className="space-y-4 mt-2">
+                                    <li>
+                                        <a href={`https://wa.me/${whatsappNumber}`} target="_blank" className="footer-contact-link footer-whatsapp-link items-center gap-3 hover:text-green-500 dark:hover:text-green-400 transition-colors text-base font-medium">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                                            (82) 99403-3796
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href={instagramLink} target="_blank" className="footer-contact-link footer-instagram-link items-center gap-3 hover:text-pink-600 dark:hover:text-pink-500 transition-colors text-base font-medium">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                                            @pizzaria.bom.paladar.j.m
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div className="max-w-7xl mx-auto px-6 mt-16 pt-8 border-t border-gray-200 dark:border-gray-900 flex flex-col md:flex-row items-center justify-between gap-4 transition-colors">
+                            <p className="text-xs text-gray-500 font-medium">
+                                &copy; {new Date().getFullYear()} Pizzaria Bom Paladar. Todos os direitos reservados.
+                            </p>
+                        </div>
+                    </footer>
+
+                    {/* BOTÃO FLUTUANTE PARA VOLTAR AO TOPO DO SITE */}
+                    <button
+                        onClick={scrollToTop}
+                        className={`fixed bottom-6 right-6 z-50 p-3.5 rounded-full shadow-2xl bg-red-600 text-white hover:bg-red-700 active:scale-95 transition-all duration-300 flex items-center justify-center ${showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}
+                        aria-label="Voltar ao Topo"
+                        title="Voltar ao Topo"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 15l7-7 7 7" />
+                        </svg>
+                    </button>
+
+                    {/* BOTÃO FLUTUANTE DO CARRINHO (aparece quando há itens) */}
+                    {cartTotalItems > 0 && !isCartOpen && (
+                        <button
+                            onClick={() => setIsCartOpen(true)}
+                            className={`fixed bottom-6 left-6 z-50 flex items-center gap-3 bg-red-600 hover:bg-red-700 text-white pl-4 pr-5 py-3.5 rounded-full shadow-2xl shadow-red-600/40 active:scale-95 transition-all duration-300 ${justAdded ? 'cart-wiggle' : ''}`}
+                        >
+                            <span className="relative">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                                <span className="absolute -top-2 -right-2 bg-white text-red-600 text-[10px] font-black w-4 h-4 flex items-center justify-center rounded-full">
+                                    {cartTotalItems}
+                                </span>
+                            </span>
+                            <span className="font-bold text-sm">Ver Carrinho · R$ {formatPrice(cartTotalPrice)}</span>
+                        </button>
+                    )}
+
+                    {/* OVERLAY + PAINEL LATERAL DO CARRINHO */}
+                    {isCartOpen && (
+                        <div className="fixed inset-0 z-[60] flex justify-end">
+                            {/* Fundo escurecido, fecha o carrinho ao clicar fora */}
+                            <div
+                                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                                onClick={() => setIsCartOpen(false)}
+                            ></div>
+
+                            {/* Painel do carrinho */}
+                            <div className="relative w-full sm:w-[420px] h-full bg-white dark:bg-[#0f0f0f] shadow-2xl flex flex-col animate-[slideIn_0.3s_ease-out]">
+                                <style>{`@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }`}</style>
+
+                                {/* Cabeçalho do carrinho */}
+                                <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-800">
+                                    <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-wider">
+                                        Seu Carrinho
+                                    </h3>
+                                    <div className="flex items-center gap-2">
+                                        {cartDetailed.length > 0 && (
+                                            <button
+                                                onClick={handleClearCart}
+                                                className="p-2 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-500 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-500 transition-colors"
+                                                aria-label="Esvaziar Carrinho"
+                                                title="Esvaziar Carrinho"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                            </button>
+                                        )}
+                                        <button
+                                            onClick={() => setIsCartOpen(false)}
+                                            className="p-2 rounded-full bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
+                                            aria-label="Fechar Carrinho"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Lista de itens */}
+                                <div className="flex-grow overflow-y-auto p-6 space-y-4">
+                                    {cartDetailed.length === 0 ? (
+                                        <div className="h-full flex flex-col items-center justify-center text-center text-gray-400 dark:text-gray-600 gap-3">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                                            </svg>
+                                            <p className="font-semibold">Seu carrinho está vazio</p>
+                                            <p className="text-sm">Adicione pizzas ou bebidas para começar seu pedido.</p>
+                                        </div>
+                                    ) : (
+                                        cartDetailed.map((item) => (
+                                            <div key={item.id} className="flex items-center justify-between gap-3 bg-gray-50 dark:bg-[#161616] border border-gray-200 dark:border-gray-800 rounded-2xl p-4">
+                                                <div className="flex-grow min-w-0">
+                                                    <h4 className="font-bold text-gray-900 dark:text-white text-sm truncate">{item.name}</h4>
+                                                    <p className="text-red-600 dark:text-red-500 font-black text-sm mt-0.5">
+                                                        R$ {formatPrice(item.price * item.quantity)}
+                                                    </p>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-500">
+                                                        {item.quantity}x R$ {formatPrice(item.price)}
+                                                    </p>
+                                                </div>
+                                                <div className="flex items-center gap-2 flex-shrink-0">
+                                                    <button
+                                                        onClick={() => handleUpdateQuantity(item.id, -1)}
+                                                        className="w-7 h-7 flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors font-bold"
+                                                        aria-label="Diminuir quantidade"
+                                                    >
+                                                        −
+                                                    </button>
+                                                    <span className="w-6 text-center font-bold text-gray-900 dark:text-white text-sm">{item.quantity}</span>
+                                                    <button
+                                                        onClick={() => handleUpdateQuantity(item.id, 1)}
+                                                        className="w-7 h-7 flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors font-bold"
+                                                        aria-label="Aumentar quantidade"
+                                                    >
+                                                        +
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleRemoveFromCart(item.id)}
+                                                        className="w-7 h-7 flex items-center justify-center rounded-full text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors ml-1"
+                                                        aria-label="Remover item"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+
+                                {/* Rodapé com total e botão de finalizar */}
+                                {cartDetailed.length > 0 && (
+                                    <div className="p-6 border-t border-gray-200 dark:border-gray-800 space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-gray-600 dark:text-gray-400 font-semibold">
+                                                Total ({cartTotalItems} {cartTotalItems === 1 ? 'item' : 'itens'})
+                                            </span>
+                                            <span className="text-2xl font-black text-gray-900 dark:text-white">
+                                                R$ {formatPrice(cartTotalPrice)}
+                                            </span>
+                                        </div>
+                                        <button
+                                            onClick={handleFinalizeOrder}
+                                            className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-4 rounded-2xl transition-all duration-300 active:scale-95 text-sm tracking-widest uppercase shadow-lg shadow-green-600/30 flex items-center justify-center gap-2"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.79.47 3.55 1.36 5.11L2.05 22l5.15-1.35a9.9 9.9 0 004.84 1.23h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2m0 18.15h-.01a8.24 8.24 0 01-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.22 8.22 0 01-1.26-4.38c0-4.54 3.7-8.24 8.26-8.24 2.2 0 4.27.86 5.83 2.42a8.18 8.18 0 012.41 5.83c0 4.54-3.7 8.23-8.24 8.23m4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.13-.17.24-.64.81-.78.97-.15.17-.29.19-.54.06-.25-.12-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.24-.02-.38.11-.5.11-.11.25-.29.37-.43.12-.15.16-.25.24-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.36-.77-1.86-.2-.48-.41-.42-.56-.42-.14-.01-.31-.01-.47-.01-.17 0-.43.06-.66.31-.23.24-.86.85-.86 2.07 0 1.22.89 2.4 1.01 2.56.12.17 1.75 2.67 4.25 3.74.59.26 1.05.41 1.42.53.6.19 1.14.16 1.57.1.48-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.14-1.18-.06-.11-.23-.17-.48-.29" /></svg>
+                                            Fazer o Pedido
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
