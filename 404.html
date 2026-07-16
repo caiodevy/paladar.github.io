@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Sistema em Manutenção</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+    <style>
+        /* Previne flash branco enquanto o React carrega */
+        body { 
+            background-color: #050505; 
+            margin: 0; 
+            overflow: hidden;
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        /* Efeito de Scanline de monitor antigo */
+        .scanlines {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2));
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        /* Animação avançada de Glitch para o 404 */
+        .glitch-wrapper {
+            position: relative;
+        }
+        
+        .glitch-text::before, .glitch-text::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #050505;
+        }
+        
+        .glitch-text::before {
+            left: 2px;
+            text-shadow: -2px 0 red;
+            clip: rect(24px, 550px, 90px, 0);
+            animation: glitch-anim-2 3s infinite linear alternate-reverse;
+        }
+        
+        .glitch-text::after {
+            left: -2px;
+            text-shadow: -2px 0 blue;
+            clip: rect(85px, 550px, 140px, 0);
+            animation: glitch-anim 2.5s infinite linear alternate-reverse;
+        }
+
+        @keyframes glitch-anim {
+            0% { clip: rect(15px, 9999px, 86px, 0); }
+            5% { clip: rect(67px, 9999px, 14px, 0); }
+            10% { clip: rect(31px, 9999px, 99px, 0); }
+            15.0% { clip: rect(93px, 9999px, 22px, 0); }
+            20% { clip: rect(55px, 9999px, 76px, 0); }
+            25% { clip: rect(11px, 9999px, 45px, 0); }
+            30.0% { clip: rect(88px, 9999px, 33px, 0); }
+            35% { clip: rect(2px, 9999px, 88px, 0); }
+            40% { clip: rect(44px, 9999px, 11px, 0); }
+            45% { clip: rect(77px, 9999px, 55px, 0); }
+            50% { clip: rect(11px, 9999px, 99px, 0); }
+            55.0% { clip: rect(99px, 9999px, 22px, 0); }
+            60.0% { clip: rect(33px, 9999px, 66px, 0); }
+            65% { clip: rect(66px, 9999px, 33px, 0); }
+            70% { clip: rect(22px, 9999px, 88px, 0); }
+            75% { clip: rect(88px, 9999px, 11px, 0); }
+            80% { clip: rect(44px, 9999px, 77px, 0); }
+            85.0% { clip: rect(77px, 9999px, 44px, 0); }
+            90% { clip: rect(11px, 9999px, 99px, 0); }
+            95% { clip: rect(99px, 9999px, 22px, 0); }
+            100% { clip: rect(33px, 9999px, 66px, 0); }
+        }
+
+        @keyframes glitch-anim-2 {
+            0% { clip: rect(65px, 9999px, 100px, 0); }
+            5% { clip: rect(50px, 9999px, 20px, 0); }
+            10% { clip: rect(85px, 9999px, 40px, 0); }
+            15.0% { clip: rect(25px, 9999px, 70px, 0); }
+            20% { clip: rect(90px, 9999px, 10px, 0); }
+            25% { clip: rect(15px, 9999px, 95px, 0); }
+            30.0% { clip: rect(75px, 9999px, 30px, 0); }
+            35% { clip: rect(35px, 9999px, 80px, 0); }
+            40% { clip: rect(95px, 9999px, 15px, 0); }
+            45% { clip: rect(45px, 9999px, 65px, 0); }
+            50% { clip: rect(10px, 9999px, 90px, 0); }
+            55.0% { clip: rect(80px, 9999px, 25px, 0); }
+            60.0% { clip: rect(20px, 9999px, 75px, 0); }
+            65% { clip: rect(60px, 9999px, 45px, 0); }
+            70% { clip: rect(30px, 9999px, 85px, 0); }
+            75% { clip: rect(100px, 9999px, 5px, 0); }
+            80% { clip: rect(5px, 9999px, 50px, 0); }
+            85.0% { clip: rect(70px, 9999px, 35px, 0); }
+            90% { clip: rect(40px, 9999px, 60px, 0); }
+            95% { clip: rect(55px, 9999px, 20px, 0); }
+            100% { clip: rect(95px, 9999px, 10px, 0); }
+        }
+
+        /* Efeito sutil de cintilação na tela inteira */
+        .crt-flicker {
+            animation: flicker 0.15s infinite;
+        }
+        @keyframes flicker {
+            0% { opacity: 0.95; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const App = () => {
+            const [isReloading, setIsReloading] = useState(false);
+            const [progress, setProgress] = useState(0);
+
+            // Simula um loading de dados de sistema no background
+            useEffect(() => {
+                const interval = setInterval(() => {
+                    setProgress(prev => (prev >= 100 ? 0 : prev + Math.floor(Math.random() * 15)));
+                }, 800);
+                return () => clearInterval(interval);
+            }, []);
+
+            const handleReload = () => {
+                setIsReloading(true);
+                // Pequeno delay para a animação do botão antes de recarregar
+                setTimeout(() => {
+                    window.location.reload();
+                }, 800);
+            };
+
+            return (
+                <div className="min-h-screen bg-[#050505] text-gray-300 flex flex-col items-center justify-center p-4 relative crt-flicker selection:bg-red-600 selection:text-white">
+                    <div className="scanlines"></div>
+
+                    {/* HUD Superior Esquerdo - Oculto em telas muito pequenas */}
+                    <div className="absolute top-6 left-6 text-xs text-gray-500 hidden md:block space-y-1">
+                        <p className="text-red-500 font-bold">// LOG: SYSTEM FAILURE</p>
+                        <p>// CODE: 0x00404</p>
+                        <p>// MESSAGE: PAGE NOT FOUND</p>
+                        <p>// REASON: UPGRADE IN PROGRESS</p>
+                    </div>
+
+                    {/* HUD Superior Direito */}
+                    <div className="absolute top-6 right-6 text-xs text-gray-500 hidden md:block text-right space-y-1">
+                        <p className="text-red-500 flex items-center justify-end gap-2">
+                            <span className="w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
+                            CONNECTION LOST
+                        </p>
+                        <p>STATUS: <span className="text-white">REBUILDING</span></p>
+                    </div>
+
+                    {/* Container Principal */}
+                    <div className="z-10 text-center flex flex-col items-center w-full max-w-3xl border border-gray-800/50 bg-black/40 p-10 md:p-16 relative backdrop-blur-sm">
+                        
+                        {/* Bordas decorativas (Corners) */}
+                        <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-red-600"></div>
+                        <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-red-600"></div>
+                        <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-red-600"></div>
+                        <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-red-600"></div>
+
+                        {/* Texto 404 com Glitch */}
+                        <div className="glitch-wrapper mb-2">
+                            <h1 
+                                className="text-8xl md:text-[180px] font-black tracking-tighter text-[#ff003c] glitch-text leading-none relative" 
+                                data-text="404"
+                            >
+                                404
+                            </h1>
+                        </div>
+
+                        <h2 className="text-3xl md:text-5xl font-bold text-white uppercase tracking-widest mb-10 text-shadow-sm">
+                            Estamos em <br className="md:hidden" /> Manutenção
+                        </h2>
+
+                        {/* Bloco de "Código/Log" simulado */}
+                        <div className="w-full max-w-md bg-black/80 border border-gray-800 p-4 text-left text-xs md:text-sm text-gray-500 mb-10 font-mono shadow-[0_0_15px_rgba(255,0,60,0.1)]">
+                            <div className="flex justify-between items-center mb-2 border-b border-gray-800 pb-2">
+                                <span className="text-red-500 flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                    </svg>
+                                    WARNING_PROTOCOL
+                                </span>
+                                <span>[ACT]</span>
+                            </div>
+                            <p>CPU USAGE.......... <span className="text-white">97%</span></p>
+                            <p>MEMORY DUMP........ <span className="text-white">89%</span></p>
+                            <p>NETWORK............ <span className="text-white">0% (OFFLINE)</span></p>
+                            <div className="mt-3 text-red-400 animate-pulse">
+                                {'>'} RESTORING_SYSTEM... {Math.min(progress, 100)}%
+                            </div>
+                            {/* Barra de progresso visual */}
+                            <div className="w-full h-1 bg-gray-900 mt-2">
+                                <div 
+                                    className="h-full bg-red-600 transition-all duration-300 ease-out" 
+                                    style={{ width: `${Math.min(progress, 100)}%` }}
+                                ></div>
+                            </div>
+                        </div>
+
+                        {/* Botão Interativo Avançado */}
+                        <button
+                            onClick={handleReload}
+                            disabled={isReloading}
+                            className={`group relative px-8 py-4 bg-transparent text-white font-bold text-sm md:text-base uppercase tracking-[0.2em] overflow-hidden transition-all duration-300 ${isReloading ? 'opacity-50 cursor-not-allowed' : 'hover:text-black'}`}
+                        >
+                            {/* Fundo do botão no hover */}
+                            <span className="absolute inset-0 w-full h-full bg-[#ff003c] -translate-x-full group-hover:translate-x-0 transition-transform duration-300 ease-out -z-10"></span>
+                            
+                            {/* Borda do botão */}
+                            <span className="absolute inset-0 w-full h-full border border-[#ff003c] -z-20"></span>
+                            
+                            <span className="relative z-10 flex items-center justify-center gap-3">
+                                {isReloading ? 'REINICIANDO...' : 'Recarregar Site'}
+                                <svg 
+                                    xmlns="http://www.w3.org/2000/svg" 
+                                    className={`h-5 w-5 ${isReloading ? 'animate-spin' : 'group-hover:animate-[spin_0.5s_linear_infinite]'}`} 
+                                    fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                            </span>
+                            
+                            {/* Decoradores do botão */}
+                            <span className="absolute top-0 left-0 w-2 h-2 border-b border-r border-[#ff003c] bg-black"></span>
+                            <span className="absolute bottom-0 right-0 w-2 h-2 border-t border-l border-[#ff003c] bg-black"></span>
+                        </button>
+                    </div>
+
+                    {/* HUD Inferior - Barras decorativas estilo código de barras */}
+                    <div className="absolute bottom-6 right-6 hidden md:flex flex-col items-end opacity-50">
+                        <div className="flex gap-1 h-8 mb-1">
+                            {[...Array(20)].map((_, i) => (
+                                <div key={i} className="bg-white" style={{ width: `${Math.random() * 4 + 1}px`, height: '100%' }}></div>
+                            ))}
+                        </div>
+                        <p className="text-[10px] tracking-widest">SYS_RESTORE_REQ</p>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
